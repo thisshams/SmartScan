@@ -52,10 +52,10 @@ async def analyze_route(uid: str = Form(...), file: UploadFile = File(...)):
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     print("Image recieved")
     img_dimensions = str(img.shape)
-    img = cv2.GaussianBlur(img, (5, 5), 0)
+    image = cv2.GaussianBlur(img, (5, 5), 0)
 
-    scan = processImage(img)
-    edgeDetected = edge(scan)
+    scan = processImage(image)
+    edgeDetected = edge(img)
     houghP = houghLinesP(edgeDetected)
     croppedImg = contourCrop(houghP, scan)
     compress(croppedImg)
