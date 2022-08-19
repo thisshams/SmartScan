@@ -1,5 +1,5 @@
 import pyrebase
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Form
 # from deta import Drive
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -39,19 +39,18 @@ def home():
 #     return FileResponse(file)
 
 # class Analyzer(BaseModel):
-#     filename: str
-#     img_dimensions: str
-#     encoded_img: str
+#     uid: str
 
 
 @app.post("/analyze")  # , response_model=Analyzer)
-async def analyze_route(file: UploadFile = File(...)):
+async def analyze_route(uid: str = Form(...), file: UploadFile = File(...)):
     contents = await file.read()
     nparr = np.fromstring(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     img_dimensions = str(img.shape)
     return_img = processImage(img)
+    print("Image recieved")
 
     config = {
         "apiKey": "AIzaSyD3cZX1RNOYr2S15FIfzxHm8CKANpYocD4",
@@ -82,13 +81,19 @@ async def analyze_route(file: UploadFile = File(...)):
     # storage.child(return_img).put(file.filename)
     # blob = storage.blob(file.filename, chunk_size=262144)  # 256KB
     # blob.upload_from_file(return_img)
+    return_img = stretch_near = cv2.resize(
+        return_img, (1240, 1754), interpolation=cv2.INTER_NEAREST)
     cv2.imwrite("output.jpg", return_img)
-
-    storage.child("output.jpg").put("output.jpg")
+    try:
+        storage.child(uid+"/output.jpg").put("output.jpg")
+        print("firebase upload successfull")
+    except:
+        print("Unsuccessfull !!!")
+        return {"Error": "FireBase Upload"}
     # line that fixed it
-    _, encoded_img = cv2.imencode('.PNG', return_img)
+    # _, encoded_img = cv2.imencode('.PNG', return_img)
 
-    encoded_img = base64.b64encode(encoded_img)
+    # encoded_img = base64.b64encode(encoded_img)
 
     return{
         'filename': file.filename,
@@ -147,7 +152,7 @@ def processImage(img):
     _, img = cv2.threshold(img, 0, 255, cv2.THRESH_TOZERO)
 
     img = img.astype('uint8')
-
+    print("image scan complete")
     return img
 
 # image = img.copy()
