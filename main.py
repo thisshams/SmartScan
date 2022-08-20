@@ -214,6 +214,7 @@ def edge(image):
 
     out = out[0, 0]
     out = cv2.resize(out, (image.shape[1], image.shape[0]))
+    cv2.dnn_unregisterLayer('Crop')
 
     print(out.shape)
     out = cv2.cvtColor(out, cv2.COLOR_GRAY2BGR)
