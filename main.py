@@ -52,7 +52,8 @@ async def analyze_route(uid: str = Form(...), file: UploadFile = File(...)):
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     print("Image recieved")
     img_dimensions = str(img.shape)
-    image = cv2.GaussianBlur(img, (5, 5), 0)
+#     image = cv2.GaussianBlur(img, (5, 5), 0)
+    image=img.copy()
 
     scan = processImage(image)
     edgeDetected = edge(img)
@@ -291,5 +292,5 @@ def compress(img):
     myheight, mywidth = img.size
     img = img.resize((w, h), Image.ANTIALIAS)
     img.save("output.jpg")
-    # img = img.resize((w//2, h//2), Image.ANTIALIAS)
-    # img.save("compressedHalfSize.jpg")
+#     img = img.resize((w//2, h//2), Image.ANTIALIAS)
+#     img.save("compressedHalfSize.jpg")
