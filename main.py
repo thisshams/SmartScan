@@ -57,8 +57,8 @@ async def analyze_route(uid: str = Form(...), file: UploadFile = File(...)):
     scan = processImage(image)
     edgeDetected = edge(img)
     houghP = houghLinesP(edgeDetected)
-    croppedImg = contourCrop(houghP, scan)
-    compress(croppedImg)
+#     croppedImg = contourCrop(houghP, scan)
+    compress(scan)
     print("Program Total RunTime :", time.time()-pstart)
 
     config = {
