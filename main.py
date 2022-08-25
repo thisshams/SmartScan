@@ -100,7 +100,7 @@ async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), file
     #     return_img, (1240, 1754), interpolation=cv2.INTER_NEAREST)
     # cv2.imwrite("output.jpg", return_img)
     try:
-        storage.child(uid+requestCode"/output.jpg").put("output.jpg")
+        storage.child(uid+requestCode+"/output.jpg").put("output.jpg")
         print("firebase upload successfull")
     except:
         print("Unsuccessfull !!!")
