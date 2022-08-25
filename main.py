@@ -9,6 +9,7 @@ import base64
 import time
 from PIL import Image
 
+
 app = FastAPI()
 
 
@@ -45,14 +46,15 @@ def home():
 
 
 @app.post("/analyze")  # , response_model=Analyzer)
-async def analyze_route(uid: str = Form(...), file: UploadFile = File(...)):
+async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), file: UploadFile = File(...)):
     contents = await file.read()
     pstart = time.time()
     nparr = np.fromstring(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     print("Image recieved")
     img_dimensions = str(img.shape)
-    image = cv2.GaussianBlur(img, (5, 5), 0)
+    # image = cv2.GaussianBlur(img, (5, 5), 0)
+    image = img.copy()
 
     scan = processImage(image)
     edgeDetected = edge(img)
@@ -94,7 +96,7 @@ async def analyze_route(uid: str = Form(...), file: UploadFile = File(...)):
     #     return_img, (1240, 1754), interpolation=cv2.INTER_NEAREST)
     # cv2.imwrite("output.jpg", return_img)
     try:
-        storage.child(uid+"/output.jpg").put("output.jpg")
+        storage.child(uid+requestCode"/output.jpg").put("output.jpg")
         print("firebase upload successfull")
     except:
         print("Unsuccessfull !!!")
@@ -146,8 +148,6 @@ def processImage(img):
     whitePoint = 127
     blackPoint = 66
 
-    print("applying high pass filter")
-
     if not kSize % 2:
         kSize += 1
 
@@ -162,17 +162,13 @@ def processImage(img):
 
     img = filtered
 
-    print("white point selection running ...")
-
-    # refer repository's wiki page for detailed explanation
-
     _, img = cv2.threshold(img, whitePoint, 255, cv2.THRESH_TRUNC)
 
     img = img.astype('int32')
     img = map(img, 0, whitePoint, 0, 255)
     img = img.astype('uint8')
 
-    print("adjusting black point for final output ...")
+    print("Scanning Done.")
 
     # refer repository's wiki page for detailed explanation
 
