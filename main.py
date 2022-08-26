@@ -122,7 +122,7 @@ async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), fini
             for i in arr:
                 image1 = Image.open(i)
                 image1.convert('RGB')
-            os.remove("output.pdf")
+            # os.remove("output.pdf")
             image1 = Image.open("document1.jpg")
             image1.save("output.pdf", save_all=True, append_images=arr[1:])
             arr.clear()
