@@ -62,7 +62,7 @@ async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), fini
     # image = cv2.GaussianBlur(img, (5, 5), 0)
     image = img.copy()
 
-    arr.append(file.filename)
+    # arr.append(file.filename)
 
     #     image = cv2.GaussianBlur(img, (5, 5), 0)
     # image = img.copy()
@@ -70,20 +70,12 @@ async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), fini
     scan = processImage(image)
     edgeDetected = edge(img)
     houghP = houghLinesP(edgeDetected)
-#     croppedImg = contourCrop(houghP, scan)
-    compress(scan, file.filename)
-    print(arr)
-    if finished == "YES":
-        ans = []
-        for i in arr:
-            image1 = Image.open(i)
-            image1.convert('RGB')
-            ans.append(image1)
-        os.remove("output.pdf")
-        print(list(ans))
-        arr.clear()
-        image1.save("output.pdf", save_all=True, append_images=ans[:-1])
-        print('Done')
+    crop = "NO"
+    if crop == "Auto":
+        croppedImg = contourCrop(houghP, scan)
+    else:
+        croppedImg = scan
+    fimg = compress(croppedImg, file.filename)
 
     print("Program Total RunTime :", time.time()-pstart)
 
@@ -120,12 +112,20 @@ async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), fini
     #     return_img, (1240, 1754), interpolation=cv2.INTER_NEAREST)
     # cv2.imwrite("output.jpg", return_img)
     try:
+        arr.append(file.filename)
+        #     image = cv2.GaussianBlur(img, (5, 5), 0)
+        # image = img.copy()
+    #     croppedImg = contourCrop(houghP, scan)
+        compress(scan, file.filename)
+        print("------------------------------------------------------", arr)
         if finished == "YES":
-            storage.child(uid+"/"+requestCode+"/output.pdf").put("output.pdf")
-            for file in os.listdir(os.getcwd()):
-                if file.endswith('.jpg') or file.endswith('.png'):
-                    os.remove(file)
-            # os.remove("output.pdf")
+            for i in arr:
+                image1 = Image.open(i)
+                image1.convert('RGB')
+            os.remove("output.pdf")
+            image1 = Image.open("document1.jpg")
+            image1.save("output.pdf", save_all=True, append_images=arr[1:])
+            print('Done')
 
         # storage.child(uid+"/"+requestCode+"/" +
         #               file.filename).put(file.filename)
@@ -313,11 +313,14 @@ def contourCrop(img, scan):
 
 
 def compress(img, name):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = Image.fromarray(img)
     w, h = img.size
     print(w, h)
     myheight, mywidth = img.size
     img = img.resize((w, h), Image.ANTIALIAS)
     img.save(name)
+    return img
+    # img.save(name)
 #     img = img.resize((w//2, h//2), Image.ANTIALIAS)
 #     img.save("compressedHalfSize.jpg")
