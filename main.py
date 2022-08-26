@@ -8,6 +8,7 @@ import cv2
 import base64
 import time
 from PIL import Image
+import os
 
 
 app = FastAPI()
@@ -43,28 +44,47 @@ def home():
 
 # class Analyzer(BaseModel):
 #     uid: str
+# @app.post("/files/")
+# async def create_file(uid: str = Form(...), requestCode: str = Form(...), file: UploadFile = File(...)):
+#     return {"file_size": len(file)}
+arr = []
 
 
 @app.post("/analyze")  # , response_model=Analyzer)
-async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), file: UploadFile = File(...)):
+async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), finished: str = Form(...), file: UploadFile = File(...)):
+
     contents = await file.read()
     pstart = time.time()
     nparr = np.fromstring(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     print("Image recieved")
     img_dimensions = str(img.shape)
-
     # image = cv2.GaussianBlur(img, (5, 5), 0)
     image = img.copy()
 
-#     image = cv2.GaussianBlur(img, (5, 5), 0)
-    image = img.copy()
+    arr.append(file.filename)
+
+    #     image = cv2.GaussianBlur(img, (5, 5), 0)
+    # image = img.copy()
 
     scan = processImage(image)
     edgeDetected = edge(img)
     houghP = houghLinesP(edgeDetected)
 #     croppedImg = contourCrop(houghP, scan)
-    compress(scan)
+    compress(scan, file.filename)
+    print(arr)
+    if finished == "YES":
+        ans = []
+        for i in arr:
+            image1 = Image.open(i)
+            image1.convert('RGB')
+            ans.append(image1)
+        os.remove("output.pdf")
+        print(list(ans))
+        arr.clear()
+        image1.save("output.pdf", save_all=True, append_images=ans[:-1])
+        print('Done')
+
     print("Program Total RunTime :", time.time()-pstart)
 
     config = {
@@ -100,7 +120,15 @@ async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), file
     #     return_img, (1240, 1754), interpolation=cv2.INTER_NEAREST)
     # cv2.imwrite("output.jpg", return_img)
     try:
-        storage.child(uid+"/"+requestCode+"/output.jpg").put("output.jpg")
+        if finished == "YES":
+            storage.child(uid+"/"+requestCode+"/output.pdf").put("output.pdf")
+            for file in os.listdir(os.getcwd()):
+                if file.endswith('.jpg') or file.endswith('.png'):
+                    os.remove(file)
+            # os.remove("output.pdf")
+
+        # storage.child(uid+"/"+requestCode+"/" +
+        #               file.filename).put(file.filename)
         print("firebase upload successfull")
     except:
         print("Unsuccessfull !!!")
@@ -111,7 +139,7 @@ async def analyze_route(uid: str = Form(...), requestCode: str = Form(...), file
     # encoded_img = base64.b64encode(encoded_img)
 
     return{
-        'filename': file.filename,
+        'filename': "name",
         'dimensions': img_dimensions,
         # 'encoded_img': endcoded_img,
     }
@@ -181,7 +209,7 @@ def processImage(img):
     img = map(img, blackPoint, 255, 0, 255)
 
     # if cv.__version__ == '3.4.4':
-    #img = img.astype('uint8')
+    # img = img.astype('uint8')
 
     _, img = cv2.threshold(img, 0, 255, cv2.THRESH_TOZERO)
 
@@ -284,12 +312,12 @@ def contourCrop(img, scan):
     return roi
 
 
-def compress(img):
+def compress(img, name):
     img = Image.fromarray(img)
     w, h = img.size
     print(w, h)
     myheight, mywidth = img.size
     img = img.resize((w, h), Image.ANTIALIAS)
-    img.save("output.jpg")
+    img.save(name)
 #     img = img.resize((w//2, h//2), Image.ANTIALIAS)
 #     img.save("compressedHalfSize.jpg")
